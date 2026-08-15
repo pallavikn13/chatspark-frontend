@@ -1,4 +1,4 @@
-import { Bot, User as UserIcon } from "lucide-react";
+import { Bot } from "lucide-react";
 import type { Message } from "@/types";
 import { formatTime } from "@/utils/format";
 import { MessageContent } from "./MessageContent";
@@ -44,8 +44,4 @@ export function MessageBubble({ message, userInitial }: MessageBubbleProps) {
       </div>
     </div>
   );
-}
-
-export function UserAvatarIcon() {
-  return <UserIcon size={18} />;
 }
