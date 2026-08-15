@@ -4,7 +4,7 @@ import { Check, Copy } from "lucide-react";
 interface Block {
   type: "text" | "code";
   content: string;
-  language?: string;
+  language?: string | undefined;
 }
 
 /** Splits a message into plain text and fenced code blocks. */
