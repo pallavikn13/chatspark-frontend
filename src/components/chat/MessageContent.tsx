@@ -27,7 +27,7 @@ function parseBlocks(content: string): Block[] {
   return blocks.filter((b) => b.content.trim().length > 0);
 }
 
-function CodeBlock({ code, language }: { code: string; language?: string }) {
+function CodeBlock({ code, language }: { code: string; language?: string | undefined }) {
   const [copied, setCopied] = useState(false);
 
   const handleCopy = () => {
