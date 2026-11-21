@@ -1,14 +1,24 @@
 server:
-  port: ${SERVER_PORT:8080}
+  # Render sets PORT. Fall back to SERVER_PORT, then 8080 for local dev.
+  port: ${PORT:${SERVER_PORT:8080}}
+  # Bind to all interfaces so Render (and Docker) can reach the app
+  address: 0.0.0.0
 
 spring:
   application:
     name: chatspark-backend
   datasource:
-    url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/chatspark}
+    # Render provides DATABASE_URL as postgres://user:pass@host/db
+    # Spring Boot needs jdbc:postgresql://user:pass@host/db
+    # We use a workaround: set the full JDBC URL in SPRING_DATASOURCE_URL on Render,
+    # and fall back to the local PostgreSQL for development.
+    url: ${SPRING_DATASOURCE_URL:${DATABASE_URL:jdbc:postgresql://localhost:5432/chatspark}}
     username: ${DATABASE_USERNAME:postgres}
     password: ${DATABASE_PASSWORD:postgres}
     driver-class-name: org.postgresql.Driver
+    hikari:
+      connection-timeout: 30000
+      maximum-pool-size: 5
   jpa:
     hibernate:
       ddl-auto: ${JPA_DDL_AUTO:update}

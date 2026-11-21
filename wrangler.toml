@@ -1,0 +1,15 @@
+# Cloudflare Pages deployment configuration for ChatSpark frontend
+# Docs: https://developers.cloudflare.com/pages/
+
+name = "chatspark-frontend"
+compatibility_date = "2024-11-01"
+compatibility_flags = ["nodejs_compat"]
+
+# Pages uses .output/server/index.mjs as the Worker
+# and .output/public/ as static assets — these are configured in the
+# Cloudflare Pages dashboard (Build output directory = .output/public)
+# The Worker script (.output/server/index.mjs) is uploaded automatically
+# by Cloudflare Pages when it detects a TanStack Start / Nitro cloudflare-module build.
+
+# ------ Local preview (wrangler pages dev) -------
+pages_build_output_dir = ".output/public"
