@@ -46,9 +46,15 @@ function RegisterPage() {
     }
     setError("");
     setLoading(true);
-    await register({ fullName, email, password });
-    setLoading(false);
-    void navigate({ to: "/" });
+
+    try {
+      await register({ fullName, email, password });
+      void navigate({ to: "/" });
+    } catch (err: any) {
+      setError(err?.message || "Registration failed. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (

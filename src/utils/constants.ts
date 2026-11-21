@@ -1,18 +1,15 @@
-export const APP_NAME = "AI Chat";
-export const APP_VERSION = "v1.0.2";
+export const APP_NAME = "ChatSpark AI";
+export const APP_VERSION = "v1.0.0";
 
-/** Base URL of the future Java Spring Boot backend. */
-export const API_BASE_URL = "/api";
-
-/** Simulated latency for the mock services (ms). */
-export const MOCK_LATENCY = 400;
-export const MOCK_AI_LATENCY = 1200;
+/** Base URL of the Java Spring Boot backend. */
+export const API_BASE_URL: string =
+  (import.meta.env['VITE_API_BASE_URL'] as string) || "http://localhost:8080/api";
 
 export const STORAGE_KEYS = {
-  user: "aichat.user",
-  token: "aichat.token",
-  conversations: "aichat.conversations",
-  messages: "aichat.messages",
+  user: "chatspark.user",
+  token: "chatspark.token",
+  conversations: "chatspark.conversations",
+  messages: "chatspark.messages",
 } as const;
 
 export const SUGGESTED_PROMPTS = [

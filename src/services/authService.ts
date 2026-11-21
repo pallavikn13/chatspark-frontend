@@ -1,39 +1,76 @@
 import type { AuthResponse, LoginPayload, RegisterPayload, User } from "@/types";
-import { MOCK_LATENCY, STORAGE_KEYS } from "@/utils/constants";
-import { createId, delay } from "@/utils/format";
+import { API_BASE_URL, STORAGE_KEYS } from "@/utils/constants";
 import { readStore, removeStore, writeStore } from "./storage";
 
-/**
- * Mock authentication service.
- *
- * Future backend mapping:
- *   login    -> POST /api/auth/login
- *   register -> POST /api/auth/register
- *
- * Replace the bodies below with fetch() calls; the signatures stay the same.
- */
+export function getAuthHeader(): Record<string, string> {
+  const token = readStore<string | null>(STORAGE_KEYS.token, null);
+  if (token) {
+    return { Authorization: `Bearer ${token}` };
+  }
+  return {};
+}
+
 export const authService = {
-  async login({ email }: LoginPayload): Promise<AuthResponse> {
-    await delay(MOCK_LATENCY);
-    const user: User = {
-      id: createId(),
-      fullName: email.split("@")[0] || "User",
-      email,
-      plan: "Pro Plan",
-    };
-    const token = `mock-token-${createId()}`;
-    writeStore(STORAGE_KEYS.user, user);
-    writeStore(STORAGE_KEYS.token, token);
-    return { user, token };
+  async login(payload: LoginPayload): Promise<AuthResponse> {
+    const res = await fetch(`${API_BASE_URL}/auth/login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+
+    if (!res.ok) {
+      const errorData = await res.json().catch(() => ({}));
+      throw new Error(errorData.message || "Invalid email or password");
+    }
+
+    const data: AuthResponse = await res.json();
+    writeStore(STORAGE_KEYS.user, data.user);
+    writeStore(STORAGE_KEYS.token, data.token);
+    return data;
   },
 
-  async register({ fullName, email }: RegisterPayload): Promise<AuthResponse> {
-    await delay(MOCK_LATENCY);
-    const user: User = { id: createId(), fullName, email, plan: "Free Plan" };
-    const token = `mock-token-${createId()}`;
-    writeStore(STORAGE_KEYS.user, user);
-    writeStore(STORAGE_KEYS.token, token);
-    return { user, token };
+  async register(payload: RegisterPayload): Promise<AuthResponse> {
+    const res = await fetch(`${API_BASE_URL}/auth/register`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+
+    if (!res.ok) {
+      const errorData = await res.json().catch(() => ({}));
+      throw new Error(errorData.message || "Registration failed");
+    }
+
+    const data: AuthResponse = await res.json();
+    writeStore(STORAGE_KEYS.user, data.user);
+    writeStore(STORAGE_KEYS.token, data.token);
+    return data;
+  },
+
+  async fetchCurrentUser(): Promise<User | null> {
+    const headers = getAuthHeader();
+    if (!headers['Authorization']) return null;
+
+    try {
+      const res = await fetch(`${API_BASE_URL}/auth/me`, {
+        method: "GET",
+        headers: {
+          ...headers,
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (!res.ok) {
+        this.logout();
+        return null;
+      }
+
+      const user: User = await res.json();
+      writeStore(STORAGE_KEYS.user, user);
+      return user;
+    } catch {
+      return this.getCurrentUser();
+    }
   },
 
   async logout(): Promise<void> {

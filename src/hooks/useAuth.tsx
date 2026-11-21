@@ -19,8 +19,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
-    setUser(authService.getCurrentUser());
-    setIsReady(true);
+    let active = true;
+    const token = authService.getToken();
+    if (token) {
+      authService.fetchCurrentUser().then((currentUser) => {
+        if (active) {
+          setUser(currentUser);
+          setIsReady(true);
+        }
+      }).catch(() => {
+        if (active) {
+          setUser(null);
+          setIsReady(true);
+        }
+      });
+    } else {
+      setUser(null);
+      setIsReady(true);
+    }
+    return () => {
+      active = false;
+    };
   }, []);
 
   const login = useCallback(async (payload: LoginPayload) => {

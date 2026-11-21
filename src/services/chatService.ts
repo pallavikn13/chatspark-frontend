@@ -1,64 +1,49 @@
 import type { Message } from "@/types";
-import { mockAiReplies, mockMessages } from "@/data/mockData";
-import { MOCK_AI_LATENCY, MOCK_LATENCY, STORAGE_KEYS } from "@/utils/constants";
-import { createId, delay } from "@/utils/format";
-import { readStore, writeStore } from "./storage";
+import { API_BASE_URL } from "@/utils/constants";
+import { getAuthHeader } from "./authService";
 
-/**
- * Mock chat/message service.
- *
- * Future backend mapping:
- *   listMessages -> GET  /api/conversations/{id}/messages
- *   sendMessage  -> POST /api/conversations/{id}/messages
- */
-function load(): Message[] {
-  return readStore<Message[]>(STORAGE_KEYS.messages, mockMessages);
-}
-
-function save(items: Message[]): void {
-  writeStore(STORAGE_KEYS.messages, items);
-}
-
-function buildMessage(
-  conversationId: string,
-  role: Message["role"],
-  content: string,
-): Message {
-  return {
-    id: createId(),
-    conversationId,
-    role,
-    content,
-    createdAt: new Date().toISOString(),
-  };
+export interface SendMessageApiResponse {
+  conversationId: string;
+  userMessage: Message;
+  aiMessage: Message;
 }
 
 export const chatService = {
   async listMessages(conversationId: string): Promise<Message[]> {
-    await delay(MOCK_LATENCY);
-    return load().filter((m) => m.conversationId === conversationId);
-  },
+    const headers = getAuthHeader();
+    if (!headers['Authorization']) return [];
 
-  /** Persists the user message. */
-  async sendMessage(conversationId: string, content: string): Promise<Message> {
-    const message = buildMessage(conversationId, "user", content);
-    save([...load(), message]);
-    return message;
+    const res = await fetch(`${API_BASE_URL}/conversations/${conversationId}/messages`, {
+      headers: {
+        ...headers,
+        "Content-Type": "application/json",
+      },
+    });
+
+    if (!res.ok) return [];
+    return await res.json();
   },
 
   /**
-   * Temporary stand-in for the assistant reply.
-   * Once the backend exists, the reply will come from sendMessage's response.
+   * Sends user message to backend, which persists user message, calls Gemini AI,
+   * persists AI response, and returns both userMessage and aiMessage in one response.
    */
-  async getMockReply(conversationId: string): Promise<Message> {
-    await delay(MOCK_AI_LATENCY);
-    const content = mockAiReplies[Math.floor(Math.random() * mockAiReplies.length)]!;
-    const message = buildMessage(conversationId, "assistant", content);
-    save([...load(), message]);
-    return message;
-  },
+  async sendMessage(conversationId: string, content: string): Promise<SendMessageApiResponse> {
+    const headers = getAuthHeader();
+    const res = await fetch(`${API_BASE_URL}/conversations/${conversationId}/messages`, {
+      method: "POST",
+      headers: {
+        ...headers,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ content }),
+    });
 
-  async clearConversation(conversationId: string): Promise<void> {
-    save(load().filter((m) => m.conversationId !== conversationId));
+    if (!res.ok) {
+      const errorData = await res.json().catch(() => ({}));
+      throw new Error(errorData.message || "Failed to send message");
+    }
+
+    return await res.json();
   },
 };

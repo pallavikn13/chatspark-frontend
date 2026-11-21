@@ -40,9 +40,15 @@ function LoginPage() {
     }
     setError("");
     setLoading(true);
-    await login({ email, password });
-    setLoading(false);
-    void navigate({ to: "/" });
+
+    try {
+      await login({ email, password });
+      void navigate({ to: "/" });
+    } catch (err: any) {
+      setError(err?.message || "Invalid email or password.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
